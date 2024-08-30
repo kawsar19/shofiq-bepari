@@ -4,7 +4,7 @@
 <head>
    <meta charset="UTF-8" />
    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-   <title>Document</title>
+   <title>ব্যাপারি</title>
    <link rel="stylesheet" href="css/bootstrap.min.css">
    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
    <style>
@@ -20,13 +20,32 @@
       td {
          vertical-align: middle;
       }
+
       button {
          white-space: nowrap;
       }
+
       @font-face {
-      font-family: kalporush;
-      src: url('/fonts/kalpurush.ttf');
+         font-family: kalporush;
+         src: url('/fonts/kalpurush.ttf');
       }
+      
+      .skeleton {
+            background-color: #e0e0e0;
+            border-radius: 4px;
+        }
+        
+        .skeleton-text {
+            width: 100%;
+            height: 12px;
+            background-color: #e0e0e0;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+        
+        .skeleton-text.short {
+            width: 60%;
+        }
    </style>
 
 </head>
@@ -59,56 +78,91 @@
          ব্যাপারি যুক্ত করুন +
       </button>
       <input type="text" v-model="searchQuery" @input="handleSearch" placeholder="নাম দিয়ে সার্চ করুন..." class="form-control mb-5" />
-      <div class="table-responsive">
-         <table class="table table-bordered mt-5">
+      <div v-if="loading">
+         <table class="table">
             <thead>
-               <tr>
-                  <th>নাম</th>
-                  <th>ফোন</th>
-                  <th>ঠিকানা</th>
-                  <th>মোট ক্রয়</th>
-                  <th>মোট পেমেন্ট</th>
-                  <th>বর্তমান বাকি</th>
-                  <th>অ্যাকশন</th>
-               </tr>
-
+                <tr>
+                    <th scope="col"><div class="skeleton skeleton-text"></div></th>
+                    <th scope="col"><div class="skeleton skeleton-text short"></div></th>
+                    <th scope="col"><div class="skeleton skeleton-text"></div></th>
+                    <th scope="col"><div class="skeleton skeleton-text short"></div></th>
+                </tr>
             </thead>
             <tbody>
-               <tr v-for="bepari in bepariList" :key="bepari._id">
-                  <!--      :class="{ 'table-active': selectedBepari && bepari._id === selectedBepari._id }" -->
-                  <td>{{ bepari.name }}</td>
-                  <td>{{ bepari.phone }}</td>
-                  <td>{{ bepari.address }}</td>
-                  <td>{{ bepari.totalPurchases }}</td>
-                  <td>{{ bepari.totalPayments }}</td>
-                  <td class="bg-warning text-warning fw-bold bg-opacity-10">{{ bepari.currentDue }}</td>
-                  <td class="d-flex gap-2">
-                  <td class="d-flex gap-2">
-                     <!-- Add Purchase Button -->
-                     <button type="button" class="btn btn-sm btn-primary fw-bold d-flex nowrap" data-bs-toggle="modal" data-bs-target="#transictionModal" @click="clickSelectedBepari(bepari)">
-                        <i class="bi bi-cart-plus-fill"></i>
-                        <span> মুরগী কেনা
-                        </span>
-                     </button>
-
-                     <!-- Add Payment Button -->
-                     <button type="button" class="btn btn-sm btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#paymentModal" @click="clickSelectedBepari(bepari)">
-                        <i class="bi bi-cash-stack"></i> টাকা দেয়া
-                     </button>
-
-                     <!-- Purchase and Payment History Button -->
-                     <button data-bs-toggle="offcanvas" data-bs-target="#allPurchases" aria-controls="staticBackdrop" @click="fetchPurchases(bepari)" class="btn btn-sm btn-outline-primary fw-bold">
-                        <i class="bi bi-journal"></i> লেনদেন হিস্টোরি
-                     </button>
-                  </td>
-
-
-
-
-               </tr>
+                <tr>
+                    <td><div class="skeleton skeleton-text"></div></td>
+                    <td><div class="skeleton skeleton-text short"></div></td>
+                    <td><div class="skeleton skeleton-text"></div></td>
+                    <td><div class="skeleton skeleton-text short"></div></td>
+                </tr>
+                <tr>
+                    <td><div class="skeleton skeleton-text"></div></td>
+                    <td><div class="skeleton skeleton-text short"></div></td>
+                    <td><div class="skeleton skeleton-text"></div></td>
+                    <td><div class="skeleton skeleton-text short"></div></td>
+                </tr>
+                <tr>
+                    <td><div class="skeleton skeleton-text"></div></td>
+                    <td><div class="skeleton skeleton-text short"></div></td>
+                    <td><div class="skeleton skeleton-text"></div></td>
+                    <td><div class="skeleton skeleton-text short"></div></td>
+                </tr>
             </tbody>
-         </table>
+        </table>
       </div>
+      <div v-else>
+         <div class="table-responsive">
+            <table class="table table-bordered mt-5">
+               <thead>
+                  <tr>
+                     <th>নাম</th>
+                     <th>ফোন</th>
+                     <th>ঠিকানা</th>
+                     <th>মোট ক্রয়</th>
+                     <th>মোট পেমেন্ট</th>
+                     <th>বর্তমান বাকি</th>
+                     <th>অ্যাকশন</th>
+                  </tr>
+
+               </thead>
+               <tbody>
+                  <tr v-for="bepari in bepariList" :key="bepari._id">
+                     <!--      :class="{ 'table-active': selectedBepari && bepari._id === selectedBepari._id }" -->
+                     <td>{{ bepari.name }}</td>
+                     <td>{{ bepari.phone }}</td>
+                     <td>{{ bepari.address }}</td>
+                     <td>{{ bepari.totalPurchases }}</td>
+                     <td>{{ bepari.totalPayments }}</td>
+                     <td class="bg-warning text-warning fw-bold bg-opacity-10">{{ bepari.currentDue }}</td>
+                     <td class="d-flex gap-2">
+                     <td class="d-flex gap-2">
+                        <!-- Add Purchase Button -->
+                        <button type="button" class="btn btn-sm btn-primary fw-bold d-flex nowrap" data-bs-toggle="modal" data-bs-target="#transictionModal" @click="clickSelectedBepari(bepari)">
+                           <i class="bi bi-cart-plus-fill"></i>
+                           <span> মুরগী কেনা
+                           </span>
+                        </button>
+
+                        <!-- Add Payment Button -->
+                        <button type="button" class="btn btn-sm btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#paymentModal" @click="clickSelectedBepari(bepari)">
+                           <i class="bi bi-cash-stack"></i> টাকা দেয়া
+                        </button>
+
+                        <!-- Purchase and Payment History Button -->
+                        <button data-bs-toggle="offcanvas" data-bs-target="#allPurchases" aria-controls="staticBackdrop" @click="fetchPurchases(bepari)" class="btn btn-sm btn-outline-primary fw-bold">
+                           <i class="bi bi-journal"></i> লেনদেন হিস্টোরি
+                        </button>
+                     </td>
+
+
+
+
+                  </tr>
+               </tbody>
+            </table>
+         </div>
+      </div>
+
       <nav v-if="totalPages > 1">
          <ul class="pagination">
             <li class="page-item" :class="{ disabled: currentPage === 1 }" @click="changePage(currentPage - 1)">
@@ -218,7 +272,7 @@
             <div class="modal-content">
                <div class="modal-header">
                   <h1 class="modal-title fs-5" id="staticBackdropLabel">
-                      {{selectedBepari?.name}} এর পেমেন্ট
+                     {{selectedBepari?.name}} এর পেমেন্ট
                   </h1>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="clickCloseTransictionModal"></button>
                </div>
@@ -329,8 +383,9 @@
       new Vue({
          el: "#app",
          data: {
+            loading: true,
             bepariList: [],
-            bepari:null,
+            bepari: null,
             purchases: [],
             payments: [],
             accessToken: '',
@@ -398,7 +453,7 @@
          methods: {
 
             fetchBepari(page = 1, search = "") {
-               console.log(page)
+               this.loading = true;
                axios
                   .get("https://shofiq.vercel.app/api/bepari", {
                      headers: {
@@ -411,7 +466,7 @@
                      },
                   })
                   .then((response) => {
-                     console.log(response.data)
+                     console.log(response.data);
                      this.bepariList = response.data.beparis;
                      this.totalPages = response.data.totalPages;
                      this.currentPage = response.data.currentPage;
@@ -419,13 +474,16 @@
                   .catch((error) => {
                      console.error("Error fetching bepari:", error);
                      // Redirect to login page if unauthorized
-                     if (error.response.status === 401) {
+                     if (error.response && error.response.status === 401) {
                         window.location.href = "login.html";
                      }
+                  })
+                  .finally(() => {
+                     this.loading = false;
                   });
             },
             addBepari() {
-               
+
                const token = localStorage.getItem("token");
                axios
                   .post(
@@ -577,7 +635,7 @@
             },
 
             fetchPurchases(bepari) {
-               
+
                axios
                   .get(`https://shofiq.vercel.app/api/purchase/${bepari._id}`, {
                      headers: {
