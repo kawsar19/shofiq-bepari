@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+   <title>Document</title>
+   <link rel="stylesheet" href="/css/bootstrap.min.css">
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+   <style>
+      * {
+         font-size: 16px;
+         font-family: kalporush;
+      }
+
+      th {
+         white-space: nowrap;
+      }
+
+      td {
+         vertical-align: middle;
+      }
+      button {
+         white-space: nowrap;
+      }
+      @font-face {
+      font-family: kalporush;
+      src: url('/fonts/kalpurush.ttf');
+      }
+   </style>
+
+</head>
+
+<body>
+   <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container">
+         <a class="navbar-brand" href="#">আমার হিসাব</a>
+         <button class="navbar-toggler shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+         </button>
+         <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+               <li class="nav-item">
+                  <a class="nav-link" href="dashboard.html">Dashboard</a>
+               </li>
+               <li class="nav-item">
+                  <a class="nav-link" href="payment.html">Payment</a>
+               </li>
+               <li class="nav-item">
+                  <a class="nav-link fw-medium text-danger" href="bepari.html">Bepari</a>
+               </li>
+            </ul>
+         </div>
+      </div>
+   </nav>
+   <div id="app" class="container mt-5">
+      <h2>ব্যাপারিদের তালিকা</h2>
+      <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addBepariModal">
+         ব্যাপারি যুক্ত করুন +
+      </button>
+      <input type="text" v-model="searchQuery" @input="handleSearch" placeholder="নাম দিয়ে সার্চ করুন..." class="form-control mb-5" />
+      <div class="table-responsive">
+         <table class="table table-bordered mt-5">
+            <thead>
+               <tr>
+                  <th>নাম</th>
+                  <th>ফোন</th>
+                  <th>ঠিকানা</th>
+                  <th>মোট ক্রয়</th>
+                  <th>মোট পেমেন্ট</th>
+                  <th>বর্তমান বাকি</th>
+                  <th>অ্যাকশন</th>
+               </tr>
+
+            </thead>
+            <tbody>
+               <tr v-for="bepari in bepariList" :key="bepari._id">
+                  <!--      :class="{ 'table-active': selectedBepari && bepari._id === selectedBepari._id }" -->
+                  <td>{{ bepari.name }}</td>
+                  <td>{{ bepari.phone }}</td>
+                  <td>{{ bepari.address }}</td>
+                  <td>{{ bepari.totalPurchases }}</td>
+                  <td>{{ bepari.totalPayments }}</td>
+                  <td class="bg-warning text-warning fw-bold bg-opacity-10">{{ bepari.currentDue }}</td>
+                  <td class="d-flex gap-2">
+                  <td class="d-flex gap-2">
+                     <!-- Add Purchase Button -->
+                     <button type="button" class="btn btn-sm btn-primary fw-bold d-flex nowrap" data-bs-toggle="modal" data-bs-target="#transictionModal" @click="clickSelectedBepari(bepari)">
+                        <i class="bi bi-cart-plus-fill"></i>
+                        <span> মুরগী কেনা
+                        </span>
+                     </button>
+
+                     <!-- Add Payment Button -->
+                     <button type="button" class="btn btn-sm btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#paymentModal" @click="clickSelectedBepari(bepari)">
+                        <i class="bi bi-cash-stack"></i> টাকা দেয়া
+                     </button>
+
+                     <!-- Purchase and Payment History Button -->
+                     <button data-bs-toggle="offcanvas" data-bs-target="#allPurchases" aria-controls="staticBackdrop" @click="fetchPurchases(bepari)" class="btn btn-sm btn-outline-primary fw-bold">
+                        <i class="bi bi-journal"></i> লেনদেন হিস্টোরি
+                     </button>
+                  </td>
+
+
+
+
+               </tr>
+            </tbody>
+         </table>
+      </div>
+      <nav v-if="totalPages > 1">
+         <ul class="pagination">
+            <li class="page-item" :class="{ disabled: currentPage === 1 }" @click="changePage(currentPage - 1)">
+               <a class="page-link" href="#">Previous</a>
+            </li>
+            <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: currentPage === page }" @click="changePage(page)">
+               <a class="page-link" href="#">{{ page }}</a>
+            </li>
+            <li class="page-item" :class="{ disabled: currentPage === totalPages }" @click="changePage(currentPage + 1)">
+               <a class="page-link" href="#">Next</a>
+            </li>
+         </ul>
+      </nav>
+      <!-- add bepari modal  -->
+      <div class="modal fade" id="addBepariModal" tabindex="-1" aria-labelledby="addBepariModalLabel" aria-hidden="true">
+         <div class="modal-dialog">
+            <div class="modal-content">
+               <div class="modal-header">
+                  <h5 class="modal-title text-success" id="addBepariModalLabel">ব্যাপারি যুক্ত করুন</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+               </div>
+               <div class="modal-body">
+                  <form @submit.prevent="addBepari">
+                     <div class="mb-3">
+                        <label for="name" class="form-label">ব্যাপারির নাম</label>
+                        <input type="text" id="name" v-model="newBepari.name" class="form-control" required />
+                     </div>
+                     <div class="mb-3">
+                        <label for="phone" class="form-label">মোবাইল</label>
+                        <input type="text" id="phone" v-model="newBepari.phone" class="form-control" required />
+                     </div>
+                     <div class="mb-3">
+                        <label for="address" class="form-label">ঠিকানা</label>
+                        <input type="text" id="address" v-model="newBepari.address" class="form-control" required />
+                     </div>
+                     <button type="submit" class="btn btn-success w-100 d-block" data-bs-dismiss="modal">
+                        সেভ
+                     </button>
+                  </form>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      <!-- transiction modal  -->
+      <div class="modal fade" id="transictionModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+         <div class="modal-dialog">
+            <div class="modal-content">
+               <div class="modal-header">
+                  <h1 class="modal-title fs-5" id="staticBackdropLabel">
+                     লেনদেন যোগ করুন
+                  </h1>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="clickCloseTransictionModal"></button>
+               </div>
+               <form @submit.prevent="submitTransaction">
+                  <div class="modal-body">
+                     <div class="mb-3">
+                        <label for="amount" class="form-label">পরিমাণ (মোট পিস)</label>
+                        <input type="number" class="form-control" id="amount" v-model="transaction.amount" required />
+                     </div>
+                     <div class="mb-3">
+                        <label for="kg" class="form-label">পরিমাণ (কেজি)</label>
+                        <input type="text" step="1" class="form-control" id="kg" v-model="transaction.kg" placeholder="কেজি" required />
+                     </div>
+                     <div class="mb-3">
+                        <label for="pricePerPiece" class="form-label">প্রতি kg মূল্য (দর)</label>
+                        <input type="text" class="form-control" id="pricePerPiece" v-model="transaction.pricePerPiece" required />
+                     </div>
+
+                     <div class="mb-3">
+                        <label for="note" class="form-label">নোট</label>
+                        <input type="text" class="form-control" id="note" v-model="transaction.note" required />
+                     </div>
+                     <div class="mb-3">
+                        <label for="khamai" class="form-label">খামারি</label>
+                        <input type="text" class="form-control" id="khamai" v-model="transaction.khamai" required />
+                     </div>
+                     <div class="mb-3">
+                        <label for="date" class="form-label">তারিখ</label>
+                        <input type="date" class="form-control" id="date" v-model="transaction.date" required />
+                     </div>
+
+                     <div class="mb-3">
+                        <label for="totalPrice" class="form-label">মোট মূল্য</label>
+                        <input type="number" class="form-control" id="totalPrice" :value="calculatedTotalPrice" readonly />
+
+                     </div>
+                     <div class="mb-3">
+                        <label for="averageKg" class="form-label">গড় কেজি</label>
+                        <input type="number" class="form-control" id="averageKg" :value="calculatedAverageKg" readonly />
+                     </div>
+                  </div>
+                  <div class="modal-footer">
+                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="clickCloseTransictionModal">
+                        বন্ধ করুন
+                     </button>
+                     <button type="submit" class="btn btn-primary">জমা দিন</button>
+                  </div>
+               </form>
+            </div>
+         </div>
+      </div>
+
+      <!-- payment modal  -->
+      <div class="modal fade" id="paymentModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+         <div class="modal-dialog">
+            <div class="modal-content">
+               <div class="modal-header">
+                  <h1 class="modal-title fs-5" id="staticBackdropLabel">
+                      {{selectedBepari?.name}} এর পেমেন্ট
+                  </h1>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="clickCloseTransictionModal"></button>
+               </div>
+               <form @submit.prevent="submitPayment">
+                  <div class="modal-body">
+                     <div class="mb-3">
+                        <label for="amount" class="form-label">টাকা</label>
+                        <input type="number" class="form-control" id="amount" v-model="payment.amount" required />
+                     </div>
+                     <div class="mb-3">
+                        <label for="note" class="form-label">নোট</label>
+                        <input type="text" class="form-control" id="note" v-model="payment.note" required />
+                     </div>
+
+                     <div class="mb-3">
+                        <label for="date" class="form-label">তারিখ</label>
+                        <input type="date" class="form-control" id="date" v-model="payment.date" required />
+                     </div>
+                  </div>
+                  <div class="modal-footer">
+                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="clickCloseTransictionModal">
+                        Close
+                     </button>
+                     <button type="submit" class="btn btn-primary">পেমেন্ট সাবমিট</button>
+                  </div>
+               </form>
+            </div>
+         </div>
+      </div>
+      <!-- all purchases  -->
+      <div class="offcanvas offcanvas-end" data-bs-backdrop="static" tabindex="-1" id="allPurchases" aria-labelledby="staticBackdropLabel">
+         <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="staticBackdropLabel">{{bepari?.name}} এর লেনদেন হিস্টোরি</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" @click="clickCloseTransictionModal"></button>
+         </div>
+         <div class="offcanvas-body">
+            <ul class="nav nav-tabs" id="purchasesPaymentsTabs" role="tablist">
+               <li class="nav-item" role="presentation">
+                  <button class="nav-link active" id="purchases-tab" data-bs-toggle="tab" data-bs-target="#purchases" type="button" role="tab" aria-controls="purchases" aria-selected="true">ক্রয়</button>
+               </li>
+               <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab" aria-controls="payments" aria-selected="false">পেমেন্ট</button>
+               </li>
+            </ul>
+
+            <!-- Tabs Content -->
+            <div class="tab-content" id="purchasesPaymentsTabsContent">
+               <div class="tab-pane fade show active" id="purchases" role="tabpanel" aria-labelledby="purchases-tab">
+                  <div class="table-responsive">
+                     <table class="table table-bordered mt-5 tabke-striped">
+                        <thead>
+                           <tr>
+                              <th>মোট টাকা</th>
+                              <th>মোট পিস </th>
+                              <th>মোট ওজন</th>
+                              <th>গড় ওজন </th>
+                              <th>দর </th>
+                              <th>তারিখ</th>
+                              <th>নোট</th>
+                              <th>খামারি </th>
+                           </tr>
+                        </thead>
+                        <tbody>
+                           <tr v-for="purchase in purchases" :key="purchase._id">
+                              <td>{{ purchase.amount }}</td>
+                              <td> {{purchase.totalPeace}}</td>
+                              <td> {{purchase.kg}}</td>
+                              <td> {{purchase.averageKg}}</td>
+                              <td>{{purchase.pricePerPiece}}</td>
+                              <td>{{ new Date(purchase.date).toLocaleDateString() }}</td>
+                              <td>{{ purchase.note }}</td>
+                              <td>{{ purchase.khamai }}</td>
+                           </tr>
+                        </tbody>
+                     </table>
+                  </div>
+               </div>
+               <div class="tab-pane fade" id="payments" role="tabpanel" aria-labelledby="payments-tab">
+                  <div>
+                     <table class="table table-bordered">
+                        <thead>
+                           <tr>
+                              <th>টাকা</th>
+                              <th>তারিখ</th>
+                              <th>নোট</th>
+                           </tr>
+                        </thead>
+                        <tbody>
+                           <tr v-for="payment in payments" :key="payment._id">
+                              <td>{{ payment.amount }}</td>
+                              <td>{{ new Date(payment.date).toLocaleDateString() }}</td>
+                              <td>{{ payment.note }}</td>
+                           </tr>
+                        </tbody>
+                     </table>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <!-- Vue.js -->
+   <script src="/js/vue@2.6.14.js"></script>
+   <!-- Axios -->
+   <script src="/js/axios.min.js"></script>
+   <script src="/js/bootstrap.bundle.min.js"></script>
+   <script>
+      new Vue({
+         el: "#app",
+         data: {
+            bepariList: [],
+            bepari:null,
+            purchases: [],
+            payments: [],
+            accessToken: '',
+            searchQuery: "",
+            currentPage: 1,
+            totalPages: 1,
+            pageSize: 4,
+            selectedBepari: null,
+            newBepari: { name: "", phone: "", address: "" },
+            transaction: {
+               amount: null,
+               kg: null,
+               note: '',
+               khamai: '',
+               date: '',
+               pricePerPiece: null,
+               avgKg: null,
+               gram: null,
+            },
+            payment: {
+               amount: null,
+               note: '',
+               date: ''
+            }
+         },
+         mounted() {
+            // Check if user is logged in
+            const token = localStorage.getItem("token");
+            if (!token) {
+               // Redirect to login page if token is not present
+               window.location.href = "login.html";
+            } else {
+               // Fetch bepari data when the component is mounted
+               this.accessToken = token
+               this.fetchBepari();
+            }
+         },
+
+         computed: {
+            calculatedTotalPrice() {
+               // Convert kg to number (assuming it's in string format like "900.500")
+               const kg = parseFloat(this.transaction.kg);
+
+               // Get price per kilogram
+               const pricePerKg = this.transaction.pricePerPiece || 0; // Default to 0 if pricePerPiece is not set
+
+               // Calculate total price
+               const totalPrice = kg * pricePerKg;
+
+               // Return formatted total price
+               return totalPrice.toFixed(2); // Ensure toFixed(2) for two decimal places
+            },
+            calculatedAverageKg() {
+               if (this.transaction.kg && this.transaction.amount) {
+                  const kg = parseFloat(this.transaction.kg);
+                  const gram = parseFloat(this.transaction.gram) || 0;
+                  return ((kg + (gram / 1000)) / this.transaction.amount).toFixed(3);
+               }
+               return null;
+            }
+
+
+         },
+
+         methods: {
+
+            fetchBepari(page = 1, search = "") {
+               console.log(page)
+               axios
+                  .get("https://shofiq.vercel.app/api/bepari", {
+                     headers: {
+                        Authorization: `Bearer ${this.accessToken}`,
+                     },
+                     params: {
+                        page: page,
+                        limit: this.pageSize,
+                        search: search,
+                     },
+                  })
+                  .then((response) => {
+                     console.log(response.data)
+                     this.bepariList = response.data.beparis;
+                     this.totalPages = response.data.totalPages;
+                     this.currentPage = response.data.currentPage;
+                  })
+                  .catch((error) => {
+                     console.error("Error fetching bepari:", error);
+                     // Redirect to login page if unauthorized
+                     if (error.response.status === 401) {
+                        window.location.href = "login.html";
+                     }
+                  });
+            },
+            addBepari() {
+               
+               const token = localStorage.getItem("token");
+               axios
+                  .post(
+                     "https://shofiq.vercel.app/api/bepari/register",
+                     this.newBepari,
+                     {
+                        headers: {
+                           Authorization: `Bearer ${token}`, // Set Authorization header with Bearer token
+                        },
+                     }
+                  )
+                  .then((response) => {
+                     // Refresh the list after adding a new bepari
+
+                     this.fetchBepari(token);
+                     // Close the modal
+                     // Clear the form fields
+
+                     this.newBepari = { name: "", phone: "", address: "" };
+                  })
+                  .catch((error) => {
+                     console.error("Error adding bepari:", error);
+                  });
+            },
+            recordPurchase() {
+               const token = localStorage.getItem("token");
+               const purchaseData = {
+                  bepari: "6697699eb3373ffec587a0ec",
+                  amount: 1200,
+                  note: "First purchase",
+                  khamai: "Kawsar",
+                  date: "2024-05-17T12:00:00Z",
+               };
+
+               axios
+                  .post("https://shofiq.vercel.app/api/purchases", purchaseData, {
+                     headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                     },
+                  })
+                  .then((response) => {
+                     console.log("Purchase recorded successfully:", response.data);
+                     // Optionally, you can perform further actions after successful recording
+                  })
+                  .catch((error) => {
+                     console.error("Error recording purchase:", error);
+                  });
+            },
+            clickSelectedBepari(bepari) {
+               this.selectedBepari = bepari;
+            },
+            clickCloseTransictionModal() {
+               this.selectedBepari = null;
+            },
+            submitTransaction() {
+
+               // Example Axios POST request
+               const token = localStorage.getItem('token');
+               const payload = {
+                  totalPeace: this.transaction.amount,
+                  kg: this.transaction.kg,
+                  pricePerPiece: this.transaction.pricePerPiece,
+                  note: this.transaction.note,
+                  khamai: this.transaction.khamai,
+                  date: this.transaction.date,
+                  amount: this.calculatedTotalPrice,
+                  averageKg: this.calculatedAverageKg,
+                  bepari: this.selectedBepari._id
+               };
+               console.log(payload)
+
+               axios.post('https://shofiq.vercel.app/api/purchase', payload, {
+                     headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                     }
+                  })
+                  .then(response => {
+                     console.log('Transaction submitted successfully:', response.data);
+                     // Optionally, you can perform further actions after successful submission
+                     // Close the modal or reset form fields
+                     this.resetForm();
+                     this.fetchBepari(token);
+                     const modal = document.getElementById('transictionModal');
+                     if (modal) {
+                        modal.classList.remove('show');
+                        modal.setAttribute('aria-hidden', 'true');
+                        modal.setAttribute('style', 'display: none');
+                        const modalBackdrop = document.getElementsByClassName('modal-backdrop')[0];
+                        modalBackdrop.parentNode.removeChild(modalBackdrop);
+                     }
+
+                  })
+                  .catch(error => {
+                     console.error('Error submitting transaction:', error);
+                  });
+            },
+            submitPayment() {
+
+               // Example Axios POST request
+               const token = localStorage.getItem('token');
+               const payload = {
+                  ...this.payment,
+                  bepari: this.selectedBepari._id
+               };
+
+               axios.post('https://shofiq.vercel.app/api/payment', payload, {
+                     headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                     }
+                  })
+                  .then(response => {
+                     console.log('payment submitted successfully:', response.data);
+                     // Optionally, you can perform further actions after successful submission
+                     // Close the modal or reset form fields
+                     this.resetForm();
+                     this.fetchBepari(token);
+                     const modal = document.getElementById('paymentModal');
+                     if (modal) {
+                        modal.classList.remove('show');
+                        modal.setAttribute('aria-hidden', 'true');
+                        modal.setAttribute('style', 'display: none');
+                        const modalBackdrop = document.getElementsByClassName('modal-backdrop')[0];
+                        modalBackdrop.parentNode.removeChild(modalBackdrop);
+                     }
+
+                  })
+                  .catch(error => {
+                     console.error('Error submitting transaction:', error);
+                  });
+            },
+            clickCloseTransictionModal() {
+               this.resetForm();
+            },
+            resetForm() {
+               this.transaction = {
+                  amount: null,
+                  note: '',
+                  khamai: '',
+                  date: ''
+               };
+               this.payment = {
+                  amount: null,
+                  note: '',
+                  date: ''
+               }
+            },
+
+            fetchPurchases(bepari) {
+               
+               axios
+                  .get(`https://shofiq.vercel.app/api/purchase/${bepari._id}`, {
+                     headers: {
+                        Authorization: `Bearer ${this.accessToken}`, // Set Authorization header with Bearer token
+                     },
+                  })
+                  .then((response) => {
+                     this.purchases = response.data.purchases;
+                     this.payments = response.data.payments;
+                     this.bepari = response.data.bepari;
+                     console.log(response.data);
+
+                  })
+                  .catch((error) => {
+                     console.error("Error fetching bepari:", error);
+                     // Redirect to login page if unauthorized
+                     if (error.response.status === 401) {
+                        window.location.href = "login.html";
+                     }
+                  });
+            },
+            handleSearch() {
+               this.currentPage = 1; // Reset to first page when searching
+               this.fetchBepari(this.currentPage, this.searchQuery);
+            },
+            changePage(page) {
+               this.fetchBepari(page, this.searchQuery);
+            },
+
+
+         },
+      });
+   </script>
+</body>
+
+</html>

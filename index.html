@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+   <title>HTML</title>
+
+   <!-- HTML -->
+
+   <link rel="stylesheet" href="/css/bootstrap.min.css">
+   <!-- Custom Styles -->
+   <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+   <div id="app">
+      <section class="d-none">
+         <div class="container mt-5">
+            <div class="border p-2">
+               <div>
+                  <label for="name">Name</label>
+                  <input type="text" placeholder="name" class="form-control shadow-none " v-model="newUser.name">
+               </div>
+               <div class="mt-2">
+                  <label for="name" class="form-label">Address</label>
+                  <input type="text" placeholder="Address" class="form-control shadow-none " v-model="newUser.address">
+               </div>
+               <div class="mt-2">
+                  <select name="" id="" class="form-select mt-2" v-model="newUser.gender">
+                     <option disabled>Select gender</option>
+                     <option value="male">Male</option>
+                     <option value="female">Female</option>
+                  </select>
+               </div>
+               <div class="mt-2">
+                  <div>
+                     <input type="radio" name="language" id="bangla" v-mldel="newUser.language">
+                     <label for="bangla">Bangla</label>
+                  </div>
+                  <div>
+                     <input type="radio" name="language" id="english" v-model="newUser.language">
+                     <label for="english">Engliah</label>
+                  </div>
+               </div>
+
+               <div class="mt-2">
+                  <button class="btn btn-success w-100 d-block" @click="addUser">Add</button>
+               </div>
+            </div>
+            <hr>
+            <table class="table table-strippet">
+               <tr>
+                  <th>Name</th>
+                  <th>Address</th>
+                  <th>Action</th>
+               </tr>
+               <tr v-for="user in users" key="user.id">
+                  <td>
+                     {{user.name}}
+                  </td>
+                  <td>{{user.address}}</td>
+                  <td @click="delUser(user.id)">del</td>
+               </tr>
+            </table>
+         </div>
+      </section>
+      <hr>
+      <section class="py-5 d-none">
+         <div class="container">
+            <div class="row">
+               <div class="col-md-6">
+                  <div v-for="submission in sortedSubmissions" key="submission.id" class="border mt-5 p-5 d-flex justify-content-between">
+                     <h2>{{submission.title}}</h2>
+                     <div v-bind:class="{ 'bg-danger': submission.votes >= 20 }">
+                        <img :src="submission.avatar" width="50" alt="">
+                        <button class="btn btn-sm btn-info" @click="upvote(submission.id)"> up {{submission.votes}}</button>
+                     </div>
+
+                  </div>
+               </div>
+            </div>
+         </div>
+      </section>
+      <section>
+         <div class="container">
+            <div class="border">
+               {{selectedThana}}
+               {{selectedUnion}}
+            </div>
+            <div class="row mt-5 g-4">
+               <div class="col-6">
+                  <select name="" v-model="selectedDivision" id="" class="form-select shadow-none" @change="changeDivision">
+                     <option value="null" disabled selected>Select Division</option>
+                     <option :value="division" v-for="division in divisions" key="division.id">
+                        {{division.bn_name}}
+                     </option>
+                  </select>
+               </div>
+               <div class="col-6">
+                  <select name="" v-model="selectedDistrict" id="" class="form-select shadow-none" :disabled="!selectedDivision" @change="changeDistrict">
+                     <option value="null" disabled selected>Select district</option>
+                     <option :value="district" v-for="district in getDivisionWiseDistrict" key="district.id">
+                        {{district.bn_name}}
+                     </option>
+                  </select>
+               </div>
+
+               <div class="col-6">
+                  <select name="" id="" v-model="selectedThana" class="form-select" :disabled="!selectedDistrict" @change="changeThana">
+                     <option value="null" disabled selected>Select thana</option>
+                     <option :value="thana" v-for="thana in getCityWiseThana" key="thana.id">{{thana.bn_name}}</option>
+
+                  </select>
+               </div>
+               <div class="col-6">
+                  <select name="" id="" v-model="selectedUnion" class="form-select" :disabled="!selectedThana">
+                     <option value="null" disabled selected>Select thana</option>
+                     <option :value="union" v-for="union in getThanaWiseUnion ">{{union.bn_name}}</option>
+
+                  </select>
+               </div>
+               <div class="col-6">
+                  <button class="btn btn-danger" 
+                  :disabled="checkValidation"
+                  @click="addAddress"
+                  >Add address {{checkValidation}}</button>
+
+               </div>
+
+            </div>
+         </div>
+      </section>
+   </div>
+
+
+   <script src="/js/vue@2.6.14.js"></script>
+   <script src="main.js"></script>
+</body>
+
+</html>
